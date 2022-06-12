@@ -73,34 +73,41 @@ cors = CORS(app)
 @app.route("/predict",  methods=["POST"])
 def predict():
     seed_text = request.json["predict"]
-    next_words = 5
+    seed_text2 = seed_text
+    seed_text3 = seed_text
+    next_words = 2
+    list_predicted = []
     for _ in range(next_words):
     # Convert the seed text to a token sequence
         token_list = tokenizer.texts_to_sequences([seed_text])[0]
-
         # Pad the sequence
         token_list = pad_sequences([token_list], maxlen=max_sequence_len-1, padding='pre')
-        data = json.dumps({"signature_name": "serving_default", "instances": token_list.tolist()})
-
+        # data = json.dumps({"signature_name": "serving_default", "instances": token_list.tolist()})
         # Feed to the model and get the probabilities for each index
         # headers = {"content-type": "application/json"}
         # probabilities = requests.post('http://test-type-suggest.herokuapp.com/v1/models/saved_model:predict', data=data, headers=headers)
-
         predictions = model.predict(token_list)
-        
-        
         # Get the index with the highest probability
-        predicted = np.argmax(predictions, axis=-1)[0]
-
+        predicted1 = np.argsort(predictions)[0][len(predictions)-2]
+        predicted2 = np.argsort(predictions)[0][len(predictions)-3]
+        predicted3 = np.argsort(predictions)[0][len(predictions)-4]
         # Ignore if index is 0 because that is just the padding.
-        if predicted != 0:
-            
+        if predicted1 != 0 and predicted2 != 0 and predicted3 != 0:
             # Look up the word associated with the index. 
-            output_word = tokenizer.index_word[predicted]
-
+            output_word1 = tokenizer.index_word[predicted1]
+            output_word2 = tokenizer.index_word[predicted2]
+            output_word3 = tokenizer.index_word[predicted3]
             # Combine with the seed text
-            seed_text += " " + output_word
-    return jsonify({"prediction": seed_text})
+            seed_text += " " + output_word1
+            seed_text2 += " " + output_word2
+            seed_text3 += " " + output_word3
+    list_predicted.append(" ".join(seed_text.split()))
+    list_predicted.append(" ".join(seed_text2.split()))
+    list_predicted.append(" ".join(seed_text3.split()))
+
+    
+    dataRequested = json.dumps(list_predicted)
+    return jsonify({"prediction": dataRequested})
 
 
 
